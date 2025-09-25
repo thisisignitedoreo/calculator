@@ -1,7 +1,7 @@
 
 ## calc
 ![Language: C](https://img.shields.io/badge/Language-C-blue?style=flat-square)
-![Not AI Slop](https://img.shields.io/badge/Not AI Slop-white?style=flat-square)
+![Not AI Slop](https://img.shields.io/badge/Not_AI_Slop-white?style=flat-square)
 
 A bit overengineered calculator for [muOS](https://muos.dev) devices.
 
@@ -27,7 +27,7 @@ Compile time dependencies:
 
 Runtime dependencies: None
 
-> [!NOTE] Windows note
+> [!NOTE]
 > To build this on windows use something like skeeto's amazing
 [w64devkit](https://github.com/skeeto/w64devkit)
 
