@@ -59,7 +59,7 @@ void csgl_rect(const csgl_state_t *state, int x, int y, int w, int h, csgl_color
     glDisableVertexAttribArray(pos_loc);
 }
 
-#define SEGMENTS 12
+#define SEGMENTS 6
 
 void csgl_rect_rounded(const csgl_state_t *state, int x, int y, int w, int h, int r, csgl_color_t color) {
     if (!w || !h) return;
@@ -101,7 +101,7 @@ void csgl_rect_rounded(const csgl_state_t *state, int x, int y, int w, int h, in
         vertices[idx++] = MAP_X(ix);
         vertices[idx++] = MAP_Y(iy);
         for (int i = 0; i < SEGMENTS + 1; i++) {
-            float theta = initial + ((float) i / SEGMENTS) * M_PI * 0.5f;
+            float theta = initial + (float) i / SEGMENTS * M_PI * 0.5f;
             float dx = cosf(theta) * r, dy = sinf(theta) * r;
             vertices[idx++] = MAP_X(ix + dx);
             vertices[idx++] = MAP_Y(iy + dy);
@@ -122,6 +122,33 @@ void csgl_rect_rounded(const csgl_state_t *state, int x, int y, int w, int h, in
     glDrawArrays(GL_TRIANGLE_FAN, 12 + (SEGMENTS + 2) * 1, SEGMENTS + 2);
     glDrawArrays(GL_TRIANGLE_FAN, 12 + (SEGMENTS + 2) * 2, SEGMENTS + 2);
     glDrawArrays(GL_TRIANGLE_FAN, 12 + (SEGMENTS + 2) * 3, SEGMENTS + 2);
+    
+    glDisableVertexAttribArray(pos_loc);
+}
+
+void csgl_circle(const csgl_state_t *state, int x, int y, int r, csgl_color_t color) {
+    GLfloat vertices[4 + SEGMENTS * 8];
+    
+    int idx = 0;
+    vertices[idx++] = MAP_X(x);
+    vertices[idx++] = MAP_Y(y);
+    for (int i = 0; i <= SEGMENTS * 4; i++) {
+        float theta = (float) i / (SEGMENTS * 4) * M_PI * 2.0f;
+        float dx = cosf(theta) * r, dy = sinf(theta) * r;
+        vertices[idx++] = MAP_X(x + dx);
+        vertices[idx++] = MAP_Y(y + dy);
+    }
+
+    glUseProgram(state->simple_sp);
+
+    GLint pos_loc = glGetAttribLocation(state->simple_sp, "a_pos");
+    glEnableVertexAttribArray(pos_loc);
+    glVertexAttribPointer(pos_loc, 2, GL_FLOAT, GL_FALSE, 0, vertices);
+
+    GLint color_loc = glGetUniformLocation(state->simple_sp, "u_color");
+    glUniform4f(color_loc, MAP_COL(color));
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 2 + SEGMENTS * 4);
     
     glDisableVertexAttribArray(pos_loc);
 }

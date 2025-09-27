@@ -43,6 +43,7 @@ void csgl_reset_scissor_mode(const csgl_state_t *state);
 void csgl_clear(const csgl_state_t *state, csgl_color_t color);
 void csgl_rect(const csgl_state_t *state, int x, int y, int w, int h, csgl_color_t color);
 void csgl_rect_rounded(const csgl_state_t *state, int x, int y, int w, int h, int r, csgl_color_t color);
+void csgl_circle(const csgl_state_t *state, int x, int y, int r, csgl_color_t color);
 
 typedef struct csgl_font {
     GLuint texture;

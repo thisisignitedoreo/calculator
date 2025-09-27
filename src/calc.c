@@ -9,6 +9,16 @@ typedef struct token {
         TOKEN_SLASH,
         TOKEN_OPAREN,
         TOKEN_CPAREN,
+        TOKEN_CARRET,
+        TOKEN_COMMA,
+        TOKEN_PERCENT,
+        TOKEN_BANG,
+        TOKEN_PI,
+        TOKEN_E,
+        TOKEN_SQRT,
+        TOKEN_CBRT,
+        TOKEN_RT,
+        TOKEN_LG,
     } type;
     union {
         double num;
@@ -18,9 +28,10 @@ typedef struct token {
 
 bool error = false;
 
+#define min(a,b) ((a) < (b) ? (a) : (b))
+
 token_t next_token(const sb_t *expression, int *counter) {
     if ((size_t) *counter >= expression->size) return (token_t) { .type = TOKEN_END };
-    printf("%d\n", *counter);
     if (isdigit(expression->data[*counter])) {
         const char *start = &expression->data[*counter];
         bool seen_dot = false;
@@ -36,16 +47,31 @@ token_t next_token(const sb_t *expression, int *counter) {
         }
         double num = strtod(start, NULL);
         return (token_t) { .type = TOKEN_NUMBER, .num = num };
+    } else if (isalpha(expression->data[*counter])) {
+        const char *start = &expression->data[*counter];
+        while (expression->size > (size_t) *counter && isalpha(expression->data[*counter])) (*counter)++;
+        enum token_type type = TOKEN_END;
+        if (&expression->data[*counter] - start == 2 && memcmp(start, "pi", 2) == 0) type = TOKEN_PI;
+        else if (&expression->data[*counter] - start == 1 && memcmp(start, "e", 1) == 0) type = TOKEN_E;
+        else if (&expression->data[*counter] - start == 4 && memcmp(start, "sqrt", 4) == 0) type = TOKEN_SQRT;
+        else if (&expression->data[*counter] - start == 4 && memcmp(start, "cbrt", 4) == 0) type = TOKEN_CBRT;
+        else if (&expression->data[*counter] - start == 2 && memcmp(start, "rt", 2) == 0) type = TOKEN_RT;
+        else if (&expression->data[*counter] - start == 2 && memcmp(start, "lg", 2) == 0) type = TOKEN_LG;
+        else error = true;
+        return (token_t) { .type = type };
     } else {
         switch (expression->data[(*counter)++]) {
         case '+': return (token_t) { .type = TOKEN_PLUS, .rune = '+' };
-        case '-': puts("that would be really strange"); return (token_t) { .type = TOKEN_MINUS, .rune = '-' };
+        case '-': return (token_t) { .type = TOKEN_MINUS, .rune = '-' };
         case '*': return (token_t) { .type = TOKEN_STAR, .rune = '*' };
         case '/': return (token_t) { .type = TOKEN_SLASH, .rune = '/' };
         case '(': return (token_t) { .type = TOKEN_OPAREN, .rune = '(' };
         case ')': return (token_t) { .type = TOKEN_CPAREN, .rune = ')' };
+        case '^': return (token_t) { .type = TOKEN_CARRET, .rune = '^' };
+        case ',': return (token_t) { .type = TOKEN_COMMA, .rune = ',' };
+        case '%': return (token_t) { .type = TOKEN_PERCENT, .rune = '%' };
+        case '!': return (token_t) { .type = TOKEN_BANG, .rune = '!' };
         default:
-            puts("like really");
             error = true;
             return (token_t) { 0 };
         }
@@ -68,38 +94,119 @@ static inline token_t ts_pop(token_stream_t *ts) {
     return cur;
 }
 
+#define EXPECT(t) do {                                              \
+    if (ts_pop(ts).type != (t)) { error = true; return -420.69; }  \
+} while (0)
+
+double factorial(double num) {
+    if (num >= 13) {
+        error = true;
+        return 0.0;
+    }
+    
+    int fact = 1;
+    double integ;
+    double fract = modf(num, &integ);
+    if (fract > 1e-12) {
+        error = true;
+        return 0.0;
+    }
+    
+    for (int i = 2; i <= (int) integ; i++) fact *= i;
+
+    return fact;
+}
+
 double eval_addsub(token_stream_t *ts);
 
 double eval_primary(token_stream_t *ts) {
-    if (ts_peek(ts).type == TOKEN_NUMBER) {
+    if (ts_peek(ts).type == TOKEN_PI) {
+        ts_pop(ts); return 3.1415926535897932384626433;
+    } else if (ts_peek(ts).type == TOKEN_E) {
+        ts_pop(ts); return 2.718281828459045235360287471352;
+    } else if (ts_peek(ts).type == TOKEN_NUMBER) {
         return ts_pop(ts).num;
-    }
-    if (ts_peek(ts).type == TOKEN_OPAREN) {
+    } else if (ts_peek(ts).type == TOKEN_OPAREN) {
         ts_pop(ts);
         double num = eval_addsub(ts);
-        if (ts_peek(ts).type != TOKEN_CPAREN) { error = true; return -420.69; }
-        ts_pop(ts);
+        EXPECT(TOKEN_CPAREN);
         return num;
     }
-    if (ts_peek(ts).type == TOKEN_END) return 0.0;
     error = true;
     return -420.69;
 }
 
-double eval_negation(token_stream_t *ts) {
-    if (ts_peek(ts).type == TOKEN_MINUS) {
-        puts("NEGATION!");
-        ts_pop(ts);
-        return -eval_negation(ts);
+double eval_function(token_stream_t *ts) {
+    if (ts_peek(ts).type == TOKEN_SQRT) {
+        ts_pop(ts); EXPECT(TOKEN_OPAREN);
+        double a1 = eval_addsub(ts);
+        EXPECT(TOKEN_CPAREN);
+        return sqrt(a1);
+    } else if (ts_peek(ts).type == TOKEN_CBRT) {
+        ts_pop(ts); EXPECT(TOKEN_OPAREN);
+        double a1 = eval_addsub(ts);
+        EXPECT(TOKEN_CPAREN);
+        return cbrt(a1);
+    } else if (ts_peek(ts).type == TOKEN_RT) {
+        ts_pop(ts); EXPECT(TOKEN_OPAREN);
+        double a1 = eval_addsub(ts);
+        EXPECT(TOKEN_COMMA);
+        double a2 = eval_addsub(ts);
+        EXPECT(TOKEN_CPAREN);
+        return pow(a1, 1.0 / a2);
+    } else if (ts_peek(ts).type == TOKEN_LG) {
+        ts_pop(ts); EXPECT(TOKEN_OPAREN);
+        double a1 = eval_addsub(ts);
+        EXPECT(TOKEN_COMMA);
+        double a2 = eval_addsub(ts);
+        EXPECT(TOKEN_CPAREN);
+        return log(a2) / log(a1);
     }
     return eval_primary(ts);
 }
 
-double eval_muldiv(token_stream_t *ts) {
+double eval_fact(token_stream_t *ts) {
+    double num = eval_function(ts);
+    while (ts_peek(ts).type == TOKEN_BANG) {
+        ts_pop(ts);
+        num = factorial(num);
+    }
+    return num;
+}
+
+double eval_negation(token_stream_t *ts) {
+    if (ts_peek(ts).type == TOKEN_MINUS) {
+        ts_pop(ts);
+        return -eval_negation(ts);
+    }
+    return eval_fact(ts);
+}
+
+double eval_percent(token_stream_t *ts) {
     double num = eval_negation(ts);
+    if (ts_peek(ts).type == TOKEN_PERCENT) {
+        ts_pop(ts);
+        double rhs = eval_negation(ts);
+        num = num * (rhs / 100.0);
+    }
+    return num;
+}
+
+double eval_exp(token_stream_t *ts) {
+    double num = eval_percent(ts);
+    if (ts_peek(ts).type == TOKEN_CARRET) {
+        ts_pop(ts);
+        double rhs = eval_percent(ts);
+        num = pow(num, rhs);
+    }
+    return num;
+}
+
+double eval_muldiv(token_stream_t *ts) {
+    double num = eval_exp(ts);
     while (ts_peek(ts).type == TOKEN_STAR || ts_peek(ts).type == TOKEN_SLASH) {
         token_t token = ts_pop(ts);
-        double rhs = eval_negation(ts);
+        double rhs = eval_exp(ts);
         if (token.type == TOKEN_STAR) num *= rhs;
         if (token.type == TOKEN_SLASH) num /= rhs;
     }
