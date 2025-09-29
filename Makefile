@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -Werror -Wno-initializer-overrides -Icril -Icsgl -Ipropri
 CFLAGS += -DMESA_EGL_NO_X11_HEADERS
 LDFLAGS = -Lcril -Lcsgl -Lproprietary/lib/ -lmali -lcril -lcsgl
 
-all: Calculator.muxupd
+all: Calculator.muxapp
 .PHONY: all clean
 
 csgl/libcsgl.a: csgl/csgl.h csgl/core.c csgl/draw.c csgl/text.c
@@ -24,8 +24,8 @@ clean:
 	rm -rf csgl/*.o csgl/libcsgl.a
 	rm -rf cril/*.o cril/libcril.a
 	rm -rf calc
-	rm -rf Calculator.muxupd
+	rm -rf Calculator.muxapp
 
-Calculator.muxupd: calc
-	cp calc bundle/mnt/mmc/MUOS/application/Calculator/calc
-	cd bundle && 7z -tzip -r a ../Calculator.muxupd *
+Calculator.muxapp: calc
+	cp calc bundle/Calculator/calc
+	cd bundle && 7z -tzip -r a ../Calculator.muxapp *

@@ -1,5 +1,5 @@
 calc
-Calculator.muxupd
+Calculator.muxapp
 *.o
 cril/libcril.a
 csgl/libcsgl.a
