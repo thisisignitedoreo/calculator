@@ -1,5 +1,6 @@
 calc
 Calculator.muxapp
-*.o
+cril/*.o
+csgl/*.o
 cril/libcril.a
 csgl/libcsgl.a
